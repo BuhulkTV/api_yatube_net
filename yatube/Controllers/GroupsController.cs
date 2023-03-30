@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Data;
 using yatube.Models;
+using yatube.Repositories;
 
 namespace yatube.Controllers
 {
@@ -11,112 +12,33 @@ namespace yatube.Controllers
     public class GroupsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        public GroupsController(IConfiguration configuration)
+        private readonly IGroupRepositorie _groupRepositorie;
+        public GroupsController(IConfiguration configuration, IGroupRepositorie groupRepositorie)
         {
             _configuration = configuration;
+            _groupRepositorie = groupRepositorie;
         }
         [HttpGet]
-        public JsonResult Get()
+        public List<GroupsForGet> Get()
         {
-            string query = @"
-                SELECT group_id, title
-                FROM groups
-            ";
-            DataTable table = new DataTable();
-            string sqlDataSource = _configuration.GetConnectionString("YatubeAppCon");
-            NpgsqlDataReader myReader;
-            using (NpgsqlConnection myCon = new NpgsqlConnection(sqlDataSource))
-            {
-                myCon.Open();
-                using (NpgsqlCommand myCommand = new NpgsqlCommand(query, myCon))
-                {
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-
-                    myReader.Close();
-                    myCon.Close();
-                }
-            }
-            return new JsonResult(table);
+            return _groupRepositorie.GetGroups();
         }
         [HttpGet("{id}")]
-        public JsonResult Get(int id)
+        public GroupForGet Get(int id)
         {
-            string query = @"
-                SELECT title, slug, description
-                FROM groups
-                WHERE group_id = @group_id
-            ";
-            DataTable table = new DataTable();
-            string sqlDataSource = _configuration.GetConnectionString("YatubeAppCon");
-            NpgsqlDataReader myReader;
-            using (NpgsqlConnection myCon = new NpgsqlConnection(sqlDataSource))
-            {
-                myCon.Open();
-                using (NpgsqlCommand myCommand = new NpgsqlCommand(query, myCon))
-                {
-                    myCommand.Parameters.AddWithValue("@group_id", id);
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-
-                    myReader.Close();
-                    myCon.Close();
-                }
-            }
-            return new JsonResult(table);
+            return _groupRepositorie.GetGroup(id);
         }
         [HttpPost]
-        public JsonResult Post(Groups gro)
+        public string Post(GroupsForCreate group)
         {
-            string query = @"
-                INSERT INTO groups(title,slug,description)
-                VALUES (@title,@slug,@description)
-            ";
-            DataTable table = new DataTable();
-            string sqlDataSource = _configuration.GetConnectionString("YatubeAppCon");
-            NpgsqlDataReader myReader;
-            using (NpgsqlConnection myCon = new NpgsqlConnection(sqlDataSource))
-            {
-                myCon.Open();
-                using (NpgsqlCommand myCommand = new NpgsqlCommand(query, myCon))
-                {
-                    myCommand.Parameters.AddWithValue("@group_id", gro.GroupId);
-                    myCommand.Parameters.AddWithValue("@title", gro.Title);
-                    myCommand.Parameters.AddWithValue("@slug", gro.Slug);
-                    myCommand.Parameters.AddWithValue("@description", gro.Description);
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-
-                    myReader.Close();
-                    myCon.Close();
-                }
-            }
-            return new JsonResult("Added Successfully");
+            _groupRepositorie.AddGroup(group);
+            return "Added Successfully";
         }
         [HttpDelete("{id}")]
-        public JsonResult Delete(int id)
+        public string Delete(int id)
         {
-            string query = @"
-                DELETE FROM groups
-                WHERE group_id = @group_id
-            ";
-            DataTable table = new DataTable();
-            string sqlDataSource = _configuration.GetConnectionString("YatubeAppCon");
-            NpgsqlDataReader myReader;
-            using (NpgsqlConnection myCon = new NpgsqlConnection(sqlDataSource))
-            {
-                myCon.Open();
-                using (NpgsqlCommand myCommand = new NpgsqlCommand(query, myCon))
-                {
-                    myCommand.Parameters.AddWithValue("@group_id", id);
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-
-                    myReader.Close();
-                    myCon.Close();
-                }
-            }
-            return new JsonResult("Delete Successfully");
+            _groupRepositorie.RemoveGroup(id);
+            return "Delete Successfully";
         }
     }
 }
